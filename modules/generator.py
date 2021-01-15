@@ -14,6 +14,7 @@ import tensorflow.keras.backend as K
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import array_ops
 
+# Utils for augmentation
 def resize(input_image, real_image, height, width):
     input_image = tf.image.resize(input_image, [height, width], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
     real_image = tf.image.resize(real_image, [height, width], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
@@ -24,6 +25,7 @@ def random_crop(input_image, real_image, orig_height, orig_width):
     return cropped_image[0], cropped_image[1]
 
 
+# CPU transform
 def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR, 
                      trINPUTSCALE, scaleINPUTVALUE, scaleINPUTCLIP, 
                      trOUTPUTSCALE, scaleOUTPUTVALUE, scaleOUTPUTCLIP, 
@@ -32,11 +34,13 @@ def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR,
                      augment_scalefactor, augment_translatepixel, 
                      augment_rotateangle, augment_shearangle,
                      flatten, batch_size):
+    # Augmentation via flipping
     if flipaugm:
         flip = slice(None,None,1) if random.randrange(2) else slice(None,None,-1)
     else:
         flip = slice(None,None,1)
     
+    # Signal normalization
     if trINPUTSCALE:
         scaleINPUTVALUE = np.array(scaleINPUTVALUE)
         scalerange = np.tile(np.reshape(scaleINPUTVALUE[:,1] - scaleINPUTVALUE[:,0], (1,1,1,1,scaleINPUTVALUE.shape[0])), 
@@ -54,7 +58,6 @@ def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR,
                             (item[1].shape[0],item[1].shape[1],item[1].shape[2],1))
         item[1] = ((item[1][...] - scalebase) / scalerange)
         
-        
     peripheralX = np.percentile(np.concatenate([item[0]["img"][:,0,:,:,:], item[0]["img"][:,-1,:,:,:], item[0]["img"][:,:,0,:,:], item[0]["img"][:,:,-1,:,:]], axis=1), 
                                50, axis=1, interpolation="midpoint")
     peripheralbaseX = np.tile(np.reshape(peripheralX, (item[0]["img"].shape[0], 1, 1, item[0]["img"].shape[3], item[0]["img"].shape[4])), 
@@ -67,6 +70,7 @@ def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR,
                              (1,item[1].shape[1],item[1].shape[2],1))
     item[1] = item[1] - peripheralbaseY
     
+    # augmentation by shape transformation
     if shapeaugm:
         rotateangle = random.uniform(-augment_rotateangle,+augment_rotateangle)
         shearangle = random.uniform(-augment_shearangle,+augment_shearangle)
@@ -90,6 +94,7 @@ def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR,
         if trMASKX: item[0]["mask"] = item[0]["mask"][:,flip]
         item[1] = item[1][:,flip]
 
+    # augmentation by brightness/contrast
     if trIMGX:
         for i in range(item[0]["img"].shape[-1]):
             if(actbrightaugm[i]):
@@ -99,6 +104,7 @@ def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR,
                 
     item[0]["img"] = item[0]["img"] + peripheralbaseX
     
+    # Signal clipping
     if trINPUTSCALE:
         item[0]["img"] = item[0]["img"]*2-1
         scaleINPUTCLIP = np.array(scaleINPUTCLIP)
@@ -117,11 +123,12 @@ def transform_output(item, trIMGX, trMASKX, trIMGY, trMIRROR,
             item[1][np.logical_and(item[1] > 1,scaleOUTPUTCLIP)] = 1
             item[1][np.logical_and(item[1] < -1,scaleOUTPUTCLIP)] = -1
         
-        
+    # flattening
     if flatten == True:
         item[1] = item[1].reshape((item[1].shape[0], -1))
     return item
 
+# GPU Transform
 @tf.function
 def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR, 
                   trINPUTSCALE, scaleINPUTVALUE, scaleINPUTCLIP, 
@@ -130,10 +137,10 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
                   augment_brightness, augment_contrast,
                   augment_scalefactor, augment_translatepixel, 
                   augment_rotateangle, augment_shearangle, flatten):
-    ### TODO update with inputscale and outputscale
     
     gpu_dtype = imgX.dtype
     
+    # Signal normalization
     if trINPUTSCALE:
         scaleXrange = tf.tile(tf.reshape(scaleINPUTVALUE[:,1] - scaleINPUTVALUE[:,0], (1,1,1,1,scaleINPUTVALUE.shape[0])), 
                              (imgX.shape[0],imgX.shape[1],imgX.shape[2],imgX.shape[3],1))
@@ -159,7 +166,8 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
                                        50, axis=1, interpolation="midpoint")
     peripheralbaseY = tf.tile(tf.reshape(peripheralY, (imgY.shape[0], 1, 1, imgY.shape[3])), (1,imgY.shape[1],imgY.shape[2],1))
     imgY = imgY - peripheralbaseY
-        
+    
+    # Mirrorring
     if trMIRROR:
         imgX = tf.concat((imgX, tf.reverse(imgX, [1])), axis=4)
     if trMNI:
@@ -168,6 +176,7 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
     origshapeX = imgX.shape[3:5]
     imgX = tf.reshape(imgX, (imgX.shape[0],imgX.shape[1],imgX.shape[2],imgX.shape[3]*imgX.shape[4]))
     
+    # Mirror flipping
     if flipaugm:
         if shuffle:
             flip = tf.greater(tf.random.uniform((imgX.shape[0],1,1,1), dtype=gpu_dtype), 0.5)
@@ -185,6 +194,7 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
                 if trIMGY:
                     imgY = tf.reverse(imgY, [1])
     
+    # augmentation by shape transformation
     if shapeaugm:
         if shuffle:
             trshape = (imgX.shape[0],)
@@ -211,7 +221,7 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
             
     imgX = tf.reshape(imgX, (imgX.shape[0],imgX.shape[1],imgX.shape[2])+origshapeX)
     
-    
+    # augmentation by brightness/contrast
     if shapeaugm:
         actbrightaugm = tf.reshape(actbrightaugm, (1,1,1,1,imgX.shape[4]))
         if shuffle:
@@ -222,7 +232,7 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
             brightmult = tf.random.uniform((1,1,1,1,imgX.shape[4]), 1-augment_contrast,1+augment_contrast, dtype=gpu_dtype)
         imgX = tf.where(actbrightaugm, (imgX + brightplus)*brightmult, imgX)
     
-    
+    # Signal clipping
     imgX = imgX + peripheralbaseX
     
     if trINPUTSCALE:
@@ -236,7 +246,8 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
         imgY = imgY*2-1
         scaleOUTPUTCLIP = tf.reshape(scaleOUTPUTCLIP, (1, 1, 1, imgY.shape[3]))
         imgY = tf.where(scaleOUTPUTCLIP, tf.clip_by_value(imgY, -1, 1), imgY)
-        
+    
+    # flattening 
     if flatten:
         imgY = tf.reshape(imgY, (imgY.shape[0], -1))
 
@@ -244,18 +255,31 @@ def gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, trMIRROR,
 
 
 class DataGenerator(tf.keras.utils.Sequence):
-    def __init__(self, datax, datay, datac, mask="maskmni",
-                 indices=None, pat_names=None, batch_size=32, only_stroke=False,
-                 dim_z=1, shuffle=True, augment=True, brightaugm=True, flipaugm=True, shapeaugm=True,
-                 augment_scalefactor=0.1, augment_translatepixel=10, augment_rotateangle=20, augment_shearangle=10,
+    def __init__(self,
+                 datax,
+                 datay,
+                 datac,
+                 mask="maskmni", # mask can be a volume or "maskmni" : it will search a mnimaskdata
+                 indices=None, # if needed, a list of indices corresponding to the first dimension of the data arrays
+                 pat_names=None, # if needed, a list of patient names
+                 batch_size=1, # not recommended for deep learning, prefer tensorflow data management tools 
+                 only_stroke=False, # filter by stroke mask value
+                 dim_z=1, # gets supplementary slices in Z axis
+                 shuffle=True, # shuffle slices
+                 augment=True, brightaugm=True, flipaugm=True, shapeaugm=True, gpu_augment=False,# data augmentation
+                 augment_scalefactor=0.1, augment_translatepixel=10, # data augmentation parameters
+                 augment_rotateangle=20, augment_shearangle=10,
                  augment_brightness=0.1, augment_contrast=0.1,
-                 give_img=True, give_z=False, give_mask=False, give_meta=False, give_mni=False, give_patient_index=False,
-                 x_lim=0, y_lim=0, flatten_output=True, mirror=False,
+                 augment_mirror=False, 
+                 give_img=True, give_z=False, give_mask=False, give_meta=False, give_mni=False, give_patient_index=False, # generator outputs
+                 x_lim=0, y_lim=0, # symmetrically cut the volume in X and Y axis
+                 flatten_output=True, # flattens Y
+                 # scaling X and Y, scale_lim can be a tuple or a list of tuples / clip corresponds to value clipping values
                  scale_input=True, scale_input_lim=(-5.0,12.0), scale_input_clip=None,
                  scale_output=False, scale_output_lim=(-5.0,12.0), scale_output_clip=False,
                  isfake=None, fakeratio=1,
-                give_latent=0, give_noise=0, gpu_augment=False,
-                gpu_float=None):
+                 give_latent=0, give_noise=0, 
+                 gpu_float=None):
         'Initialization'
         self.datax = datax
         self.datay = datay
@@ -267,8 +291,8 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.dimz = datax.shape[3] - 2
         self.dimzinput = dim_z
         self.n_channels = datax.shape[4]
-        self.mirror = mirror
-        if self.mirror:
+        self.augment_mirror = augment_mirror
+        if self.augment_mirror:
             self.n_channels *= 2
         self.give_mni = give_mni
         if self.give_mni:
@@ -422,7 +446,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 batchtosend = None
     
     def transform_output(self, item, zindex):
-    
+        'WRAPPER for CPU and GPU augment'
         if item[0]["img"] is None:
             trIMGX = False
             if self.gpu_augment:
@@ -477,8 +501,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             mniVALUE = tf.constant(0)
 
         if self.gpu_augment:
-            #with tf.device('/GPU:1'):
-            imgX, maskX, imgY = gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, self.mirror, 
+            imgX, maskX, imgY = gpu_transform(imgX, maskX, imgY, trIMGX, trMASKX, trIMGY, self.augment_mirror, 
                                                   self.scale_input, scaleINPUTVALUE, scaleINPUTCLIP, 
                                                   self.scale_output, scaleOUTPUTVALUE, scaleOUTPUTCLIP, 
                                                   self.give_mni, mniVALUE,
@@ -500,7 +523,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                 if self.batch_size == 1:
                     item[1] = item[1][0]
         else:
-            item = transform_output(item, trIMGX, trMASKX, trIMGY, self.mirror, 
+            item = transform_output(item, trIMGX, trMASKX, trIMGY, self.augment_mirror, 
                                     self.scale_input, self.scale_input_lim, self.scale_input_clip,
                                     self.scale_output, self.scale_output_lim, self.scale_output_clip,
                                     self.give_mni, item[0]["mnicoords"],
@@ -541,7 +564,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             np.random.shuffle(self.indexes)
 
     def getitem(self, item):
-        'Generates data containing 1 samples' # X : (n_samples, *dim, n_channels)
+        'Generates data containing samples' # X : (n_samples, *dim, n_channels)
         # Initialization
         ID, Z = item
         if self.isfake is not None and ID >= 1000:

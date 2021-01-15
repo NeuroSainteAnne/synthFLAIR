@@ -7,6 +7,7 @@ mae_loss_object = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Re
     
 def generator_loss(disc_generated_output, pseudo_flair, real_flair, lambda_l1,
                    pseudo_sobel, real_sobel, lambda_sobel, weights, pooled_weights):
+    "GENERATOR loss contains L1 loss, Edge loss, GAN loss"
     gan_loss = tf.reduce_mean(
         bce_loss_object(
             tf.ones_like(disc_generated_output), 
@@ -21,6 +22,7 @@ def generator_loss(disc_generated_output, pseudo_flair, real_flair, lambda_l1,
     return total_gen_loss, gan_loss, l1_loss, edge_loss
 
 def discriminator_loss(disc_real_output, disc_generated_output, weights, pooled_weights):
+    "DISCRIMINATOR loss contains real and generated loss"
     real_loss = tf.reduce_mean(
         bce_loss_object(
             tf.ones_like(disc_real_output), 

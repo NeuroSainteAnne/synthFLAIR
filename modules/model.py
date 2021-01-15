@@ -10,6 +10,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow import random_normal_initializer, tile
 
 def conv_block(input_tensor, filters, size, strides=1, batchnorm=True, name="null"):
+    'Base convolutional block'
     initializer = random_normal_initializer(0., 0.02)
     x = Conv2D(filters, size, strides=strides, padding='same',
                kernel_initializer=initializer, use_bias=False,
@@ -104,7 +105,5 @@ def Discriminator(n_filters=128):
     
     return Model(inputs=[inp, sobel, qual, tar], outputs=last, name="synthFlairDiscriminator")
 
-    bce_loss_object = tf.keras.losses.BinaryCrossentropy(label_smoothing=0.2, reduction=tf.keras.losses.Reduction.NONE)
-    mae_loss_object = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
 
