@@ -19,7 +19,7 @@ pip install -r requirements.txt
 pip install jupyterlab
 ```
 
-Open the jupyter notebook and follow instructions
+Open the jupyter notebook and follow instructions to train your model
 
 ```
 jupyter notebook
