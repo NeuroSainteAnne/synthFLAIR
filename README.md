@@ -19,11 +19,13 @@ pip install -r requirements.txt
 pip install jupyterlab
 ```
 
-Open the jupyter notebook and follow instructions to train your model
+Open the jupyter notebook
 
 ```
 jupyter notebook
 ```
+
+Then open the [synthFLAIR](synthFLAIR.ipynb) notebook and follow instructions to train and save your model.
 
 
 ### Orthanc module
