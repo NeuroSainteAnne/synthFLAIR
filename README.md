@@ -27,6 +27,9 @@ jupyter notebook
 
 Then open the [synthFLAIR](synthFLAIR.ipynb) notebook and follow instructions to train and save your model.
 
+### Inference
+
+Once the model is trained, you can convert NIFTI DWI volumes into synthFLAIR volumes with the [synthFLAIR-Convert](synthFLAIR-Convert.ipynb) tool.
 
 ### Orthanc module
 
