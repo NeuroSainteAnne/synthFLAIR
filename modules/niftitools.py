@@ -9,6 +9,7 @@ from scipy.ndimage import label
 from dipy.segment.mask import median_otsu
 
 def padvolume(volume):
+    "Applies a padding/cropping to a volume in order to hav 256x256 size"
     padx1 = padx2 = pady1 = pady2 = 0
     orig_shape = volume.shape
     if orig_shape[0] < 256 or orig_shape[1] < 256:
@@ -32,6 +33,7 @@ def padvolume(volume):
     return volume, (padx1, padx2, pady1, pady2, cutx1, cutx2, cuty1, cuty2)
 
 def reversepad(volume, padspecs):
+    "Reserves a previously applied padding"
     padx1 = padspecs[0]
     padx2 = padspecs[1]
     pady1 = padspecs[2]
@@ -53,23 +55,36 @@ def reversepad(volume, padspecs):
     return volume
 
 def brain_component(vol):
+    "Select the largest component in a mask (brain)"
     label_im, nb_labels = label(vol)
     label_count = np.bincount(label_im.ravel().astype(np.int))
     label_count[0] = 0
     return label_im == label_count.argmax()
 
 def normalize(vol, mask):
+    "Normalization of a volume"
     masked_vol = vol[mask]
     mean_val, sd_val = np.mean(masked_vol), np.std(masked_vol)
     vol = (vol - mean_val) / sd_val
     return vol
 
-def nifti2array(diffpath):
-    # load diffusion
-    diffnib = nib.load(diffpath)
-    diffdata = diffnib.get_fdata()
+def adccompute(b0, b1000):
+    "Computes ADC map"
+    crudemask = (b0 >= 1) & (b1000 >= 1) # exclude zeros for ADC calculation
+    adc = np.zeros(b0.shape, b1000.dtype)
+    adc[crudemask] = -1. * float(1000) * np.log(b1000[crudemask] / b0[crudemask])
+    adc[adc < 0] = 0
+    return adc
+
+def maskcompute(b0, b1000):
+    "Computes a brain mask using otsu method"
+    b0_mask, mask0 = median_otsu(b0, 1, 1)
+    b1000_mask, mask1000 = median_otsu(b1000, 1, 1)
+    mask = binary_fill_holes(morphology.binary_dilation(brain_component(mask0 & mask1000)))
+    mask = mask & (b0 >= 1) & (b1000 >= 1)
     
-    # differenciate b1000 from b0
+def splitdiffusion(diffdata):
+    "Splits b0 and b1000 based on value mean"
     vol1 = diffdata[...,0]
     vol2 = diffdata[...,1]
     if vol1.mean() > vol2.mean():
@@ -78,21 +93,25 @@ def nifti2array(diffpath):
     else:
         b0 = vol2
         b1000 = vol1
+    return b0, b1000
+
+def nifti2array(diffpath):
+    # load diffusion
+    diffnib = nib.load(diffpath)
+    diffdata = diffnib.get_fdata()
+    
+    # differenciate b1000 from b0
+    b0, b1000 = splitdiffusion(diffdata)
         
+    # pad/crop volumes to 256x256
     b0, _ = padvolume(b0)
     b1000, padspecs = padvolume(b1000)
     
     # ADC calculation
-    crudemask = (b0 >= 1) & (b1000 >= 1) # exclude zeros for ADC calculation
-    adc = np.zeros(b0.shape, b1000.dtype)
-    adc[crudemask] = -1. * float(1000) * np.log(b1000[crudemask] / b0[crudemask])
-    adc[adc < 0] = 0
+    adc = adccompute(b0, b1000)
     
     # mask computation
-    b0_mask, mask0 = median_otsu(b0, 1, 1)
-    b1000_mask, mask1000 = median_otsu(b1000, 1, 1)
-    mask = binary_fill_holes(morphology.binary_dilation(brain_component(mask0 & mask1000)))
-    mask = mask & (b0 >= 1) & (b1000 >= 1)
+    mask = maskcompute(b0, b1000)
     
     # normalisation
     b0 = normalize(b0, mask)
