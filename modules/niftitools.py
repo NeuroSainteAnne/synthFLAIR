@@ -131,7 +131,6 @@ def twoniftis2array(b0path, b1000path,z_pad=None):
     return splitdwi2array(diff0data,diff1000data,adjust=False,z_pad=z_pad)
 
 def flairnifti2array(flairpath, mask, z_pad=None):
-    # load nifti
     flairnib = nib.load(flairpath)
     flair = flairnib.get_fdata()
     
@@ -144,6 +143,18 @@ def flairnifti2array(flairpath, mask, z_pad=None):
     flair = normalize(flair, mask)
     
     return flair
+
+def masknifti2array(mask, z_pad=None):
+    # load nifti
+    masknib = nib.load(mask)
+    mask = masknib.get_fdata()
+    
+    # pad
+    mask, padspecs = padvolume(mask)
+    if z_pad is not None:
+        mask = zpadding(mask, z_pad)
+    
+    return mask
 
 def splitdwi2array(b0,b1000,adjust=False,z_pad=None):
         
