@@ -29,11 +29,17 @@ Open the jupyter notebook
 jupyter notebook
 ```
 
-Then open the [synthFLAIR](synthFLAIR.ipynb) notebook and follow instructions to train and save your model.
+### Data preparation
+
+Open the [synthFLAIR-Dataprep](synthFLAIR-Dataprep.ipynb) in order to convert you NIFTI files in a Memmap format for model training
+
+### Model training
+
+Open the [synthFLAIR](synthFLAIR.ipynb) notebook and follow instructions to train and save your model.
 
 ### Inference
 
-Once the model is trained, you can convert NIFTI DWI volumes into synthFLAIR volumes with the [synthFLAIR-Convert](synthFLAIR-Convert.ipynb) tool.
+Once the model is trained and saved, you can convert 4D NIFTI DWI volumes into synthFLAIR volumes with the [synthFLAIR-Convert](synthFLAIR-Convert.ipynb) tool.
 
 ### Orthanc module
 
