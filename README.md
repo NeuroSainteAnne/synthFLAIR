@@ -35,7 +35,7 @@ Open the [synthFLAIR-Dataprep](synthFLAIR-Dataprep.ipynb) in order to convert yo
 
 ### Model training
 
-Open the [synthFLAIR](synthFLAIR.ipynb) notebook and follow instructions to train and save your model.
+Open the [synthFLAIR-Train](synthFLAIR-Train.ipynb) notebook and follow instructions to train and save your model.
 
 ### Inference
 
