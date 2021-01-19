@@ -13,11 +13,11 @@ def conv_block(input_tensor, filters, size, strides=1, batchnorm=True, name="nul
     'Base convolutional block'
     initializer = random_normal_initializer(0., 0.02)
     x = Conv2D(filters, size, strides=strides, padding='same',
-               kernel_initializer=initializer, use_bias=False,
+               kernel_initializer=initializer, 
               name=name)(input_tensor)
     if batchnorm:
         x = BatchNormalization(name=name+"_BatchNorm")(x)
-    x = LeakyReLU(name=name+"_Activation")(x)
+    x = Activation("relu", name=name+"_Activation")(x)
     return x
 
 def Generator(n_filters=64, dropout=0.5):
@@ -30,8 +30,8 @@ def Generator(n_filters=64, dropout=0.5):
     input_quality_reshaped = tile(Reshape((1,1,1))(input_quality), (1,256,256,1), name="G_InputQualityTiled")
     input_concatenated = concatenate([input_reshaped, input_quality_reshaped], axis=3, name="G_InputConcatenated")
     
-    c0 = conv_block(input_concatenated, n_filters*1, 3, batchnorm=False, name="G_Down_1a")
-    c1 = conv_block(input_concatenated, n_filters*1, 3, 2, name="G_Down_1b")
+    c0 = conv_block(input_concatenated, n_filters*1, 3, name="G_Down_1a")
+    c1 = conv_block(c0, n_filters*1, 3, 2, name="G_Down_1b")
     p1 = Dropout(dropout*0.5, name="G_Down_Drop1")(c1)
 
     c2 = conv_block(p1, n_filters*2, 3, name="G_Down_2a")
@@ -53,34 +53,34 @@ def Generator(n_filters=64, dropout=0.5):
     u6 = Conv2DTranspose(n_filters*8, 3, 2, padding='same', name="G_Up_1a")(c5)
     u6 = concatenate([u6, c4], name="G_Up_Skip1")
     u6 = Dropout(dropout, name="G_Up_Drop1")(u6)
-    c6 = conv_block(u6, n_filters*8, 3, name="G_Up_1b")
-    c6 = conv_block(c6, n_filters*8, 3, name="G_Up_1c")
+    u6 = conv_block(u6, n_filters*8, 3, name="G_Up_1b")
+    u6 = conv_block(u6, n_filters*8, 3, name="G_Up_1c")
 
-    u7 = Conv2DTranspose(n_filters*4, 3, 2, padding='same', name="G_Up_2a")(c6)
+    u7 = Conv2DTranspose(n_filters*4, 3, 2, padding='same', name="G_Up_2a")(u6)
     u7 = concatenate([u7, c3], name="G_Up_Skip2")
     u7 = Dropout(dropout, name="G_Up_Drop2")(u7)
-    c7 = conv_block(u7, n_filters*4, 3, name="G_Up_2b")
-    c7 = conv_block(c7, n_filters*4, 3, name="G_Up_2c")
+    u7 = conv_block(u7, n_filters*4, 3, name="G_Up_2b")
+    u7 = conv_block(u7, n_filters*4, 3, name="G_Up_2c")
 
-    u8 = Conv2DTranspose(n_filters*2, 3, 2, padding='same', name="G_Up_3a")(c7)
+    u8 = Conv2DTranspose(n_filters*2, 3, 2, padding='same', name="G_Up_3a")(u7)
     u8 = concatenate([u8, c2], name="G_Up_Skip3")
     u8 = Dropout(dropout, name="G_Up_Drop3")(u8)
-    c8 = conv_block(u8, n_filters*2, 3, name="G_Up_3b")
-    c8 = conv_block(c8, n_filters*2, 3, name="G_Up_3c")
+    u8 = conv_block(u8, n_filters*2, 3, name="G_Up_3b")
+    u8 = conv_block(u8, n_filters*2, 3, name="G_Up_3c")
 
-    u9 = Conv2DTranspose(n_filters*1, 3, 2, padding='same', name="G_Up_4a")(c8)
+    u9 = Conv2DTranspose(n_filters*1, 3, 2, padding='same', name="G_Up_4a")(u8)
     u9 = concatenate([u9, c1], axis=3, name="G_Up_Skip4")
     u9 = Dropout(dropout, name="G_Up_Drop4")(u9)
-    c9 = conv_block(u9, n_filters*1, 3, name="G_Up_4b")
-    c9 = conv_block(c9, n_filters*1, 3, name="G_Up_4c")
+    u9 = conv_block(u9, n_filters*1, 3, name="G_Up_4b")
+    u9 = conv_block(u9, n_filters*1, 3, name="G_Up_4c")
 
-    u10 = Conv2DTranspose(n_filters*1, 3, 2, padding='same', name="G_Up_5a") (c9)
+    u10 = Conv2DTranspose(n_filters*1, 3, 2, padding='same', name="G_Up_5a") (u9)
     u10 = concatenate([u10, c0], axis=3, name="G_Up_Skip5")
     u10 = Dropout(dropout, name="G_Up_Drop5")(u10)
-    c10 = conv_block(u10, n_filters*1, 3, name="G_Up_5b")
-    c10 = conv_block(c10, n_filters*1, 3, name="G_Up_5c")
+    u10 = conv_block(u10, n_filters*1, 3, name="G_Up_5b")
+    u10 = conv_block(u10, n_filters*1, 3, name="G_Up_5c")
     
-    output = Conv2D(1, 1, activation='tanh', dtype='float32', name="G_End") (c10)
+    output = Conv2D(1, 1, activation='tanh', dtype='float32', name="G_End") (u10)
     model = Model(inputs=[input_img, input_quality], outputs=[output], name="synthFlairGenerator")
     return model
 
