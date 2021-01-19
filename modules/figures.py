@@ -46,7 +46,7 @@ def figure(datax,
                                             flatten_output=False, batch_size=1, dim_z=1,
                                             augment=False, shapeaugm=False, brightaugm=False, flipaugm=False, gpu_augment=False, 
                                             scale_input=True, scale_input_lim=[(-5,12),(-5,12),(0,7500.0)],
-                                            scale_input_clip=[False,False,False],
+                                            scale_input_clip=[True,True,False],
                                             scale_output=True, scale_output_lim=(-5,10), scale_output_clip=True,
                                             only_stroke=False, give_mask=True, give_meta=True, give_patient_index=True)
     dsVO = tf.data.Dataset.from_generator(valid_generator_ordered.getnext, 
