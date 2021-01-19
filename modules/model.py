@@ -80,7 +80,7 @@ def Generator(n_filters=64, dropout=0.5):
     c10 = conv_block(u10, n_filters*1, 3, name="G_Up_5b")
     c10 = conv_block(c10, n_filters*1, 3, name="G_Up_5c")
     
-    output = Conv2D(1, 1, activation='tanh', name="G_End") (c10)
+    output = Conv2D(1, 1, activation='tanh', dtype='float32', name="G_End") (c10)
     model = Model(inputs=[input_img, input_quality], outputs=[output], name="synthFlairGenerator")
     return model
 
@@ -101,7 +101,7 @@ def Discriminator(n_filters=128):
 
     last = Conv2D(1, 2, strides=2, activation="sigmoid",
                   kernel_initializer=initializer, use_bias=True,
-                 name="D_End")(down4) # (bs, 4, 4, 1)
+                 name="D_End", dtype='float32')(down4) # (bs, 4, 4, 1)
     
     return Model(inputs=[inp, sobel, qual, tar], outputs=last, name="synthFlairDiscriminator")
 
