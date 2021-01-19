@@ -267,8 +267,8 @@ class DataGenerator(tf.keras.utils.Sequence):
                  dim_z=1, # gets supplementary slices in Z axis
                  shuffle=True, # shuffle slices
                  augment=True, brightaugm=True, flipaugm=True, shapeaugm=True, gpu_augment=False,# data augmentation
-                 augment_scalefactor=0.1, augment_translatepixel=10, # data augmentation parameters
-                 augment_rotateangle=20, augment_shearangle=10,
+                 augment_scalefactor=0.05, augment_translatepixel=10, # data augmentation parameters
+                 augment_rotateangle=10, augment_shearangle=5,
                  augment_brightness=0.1, augment_contrast=0.1,
                  augment_mirror=False, 
                  give_img=True, give_z=False, give_mask=False, give_meta=False, give_mni=False, give_patient_index=False, # generator outputs
