@@ -42,6 +42,8 @@ Open the [synthFLAIR-Dataprep](synthFLAIR-Dataprep.ipynb) in order to convert yo
 
 Open the [synthFLAIR-Train](synthFLAIR-Train.ipynb) notebook and follow instructions to train and save your model.
 
+Alternatively, download the pre-trained weights available [here](https://github.com/NeuroSainteAnne/synthFLAIR/releases/tag/1.0).
+
 ### Inference
 
 Once the model is trained and saved, you can convert 4D NIFTI DWI volumes into synthFLAIR volumes with the [synthFLAIR-Convert](synthFLAIR-Convert.ipynb) tool.
