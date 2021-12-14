@@ -1,15 +1,6 @@
 # synthFLAIR
 Software designed to convert MRI diffusion-weighted sequences into FLAIR sequences
 
-### Sample
-
-<img src="examples/synthFLAIRExample.jpg" width="350px" title="Example of synthFLAIR images">
-
-### Model schematic
-
-<img src="examples/Model.jpg" width="900px" title="Model Schematic">
-
-
 ### Prerequisites
 Python 3.8
 
