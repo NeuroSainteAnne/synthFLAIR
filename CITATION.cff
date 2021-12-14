@@ -25,5 +25,4 @@ authors:
 - family-names: "Oppenheim"
   given-names: "Catherine"
 title: "Synthetic FLAIR as a Substitute for FLAIR Sequence in Acute Ischemic Stroke"
-doi: 10.1148/radiol.211394
 url: "https://github.com/NeuroSainteAnne/synthFLAIR"
