@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+authors:
+- family-names: "Benzakoun"
+  given-names: "Joseph"
+- family-names: "Lisa"
+  given-names: "Mona"
+title: "Synthetic FLAIR as a Substitute for FLAIR Sequence in Acute Ischemic Stroke"
+version: 1.0.0
+doi: 10.1148/radiol.211394
+url: "https://github.com/NeuroSainteAnne/synthFLAIR"
