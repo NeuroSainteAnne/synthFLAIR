@@ -120,7 +120,8 @@ def nifti2array(diffpath):
     stacked, mask, padspecs = splitdwi2array(b0,b1000,adjust=True,z_pad=False)
     stacked = stacked.transpose([3,2,1,0])[:,:,::-1,np.newaxis,:]
     qualarr = np.tile(2, (stacked.shape[0],1))
-    return stacked, qualarr, padspecs, diffnib.affine
+    fsarr = np.tile(0, (stacked.shape[0],1))
+    return stacked, qualarr, fsarr, padspecs, diffnib.affine
     
 def twoniftis2array(b0path, b1000path,z_pad=None):
     # load niftis
@@ -168,7 +169,7 @@ def splitdwi2array(b0,b1000,adjust=False,z_pad=None):
         b1000 = zpadding(b1000, z_pad)
     
     # ADC calculation
-    adc = adccompute(b0, b1000)
+    # adc = adccompute(b0, b1000)
     
     # mask computation
     mask = maskcompute(b0, b1000)
@@ -181,10 +182,10 @@ def splitdwi2array(b0,b1000,adjust=False,z_pad=None):
     if adjust:
         b0 = ((b0 + 5) / (12 + 5))*2-1
         b1000 = ((b1000 + 5) / (12 + 5))*2-1
-        adc = ((adc) / (7500))*2-1
+        # adc = ((adc) / (7500))*2-1
     
     # export for model input
-    stacked = np.stack([b0,b1000,adc])
+    stacked = np.stack([b0,b1000])
     
     return stacked, mask, padspecs
     
