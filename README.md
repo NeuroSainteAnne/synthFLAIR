@@ -1,6 +1,8 @@
 # synthFLAIR
 Software designed to convert MRI diffusion-weighted sequences into FLAIR sequences
 
+[![DOI](https://zenodo.org/badge/329889326.svg)](https://doi.org/10.5281/zenodo.23241525)
+
 ### Prerequisites
 Python 3.8
 
